@@ -4,25 +4,6 @@
 
   var CHECK = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>';
 
-  var toastTimer = null;
-  var toastEl = document.getElementById('vt-toast');
-  var toastMsg = toastEl ? toastEl.querySelector('.vt-toast-msg') : null;
-
-  function showToast(message) {
-    if (!toastEl || !toastMsg) return;
-    toastMsg.textContent = message;
-    toastEl.hidden = false;
-    // Restart the entrance animation on every copy.
-    toastEl.style.animation = 'none';
-    void toastEl.offsetWidth;
-    toastEl.style.animation = '';
-    if (toastTimer) window.clearTimeout(toastTimer);
-    toastTimer = window.setTimeout(function () {
-      toastEl.hidden = true;
-      toastMsg.textContent = '';
-    }, 2000);
-  }
-
   function fallbackCopy(value) {
     var area = document.createElement('textarea');
     area.value = value;
@@ -60,7 +41,6 @@
       button.dataset.originalLabel = button.textContent || 'کپی';
     }
     button.textContent = '✓';
-    showToast(button.getAttribute('data-toast') || 'کپی شد');
     if (button._vtRestore) window.clearTimeout(button._vtRestore);
     button._vtRestore = window.setTimeout(function () {
       button.textContent = button.dataset.originalLabel;
@@ -108,7 +88,6 @@
     copyValue(value).then(function () {
       if (isRow) {
         flashRow(button);
-        showToast(button.getAttribute('data-toast') || 'کپی شد');
       } else {
         flashField(button);
       }
