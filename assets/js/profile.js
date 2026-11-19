@@ -23,12 +23,29 @@
   });
 
   var checkTimer = null;
+  var toastTimer = null;
+  var toastEl = document.getElementById('vt-toast');
+  var toastMsg = toastEl ? toastEl.querySelector('.vt-toast-msg') : null;
+
+  function showToast(message) {
+    if (!toastEl || !toastMsg) return;
+    toastMsg.textContent = message;
+    toastEl.hidden = false;
+    // Restart the entrance animation on every copy.
+    toastEl.style.animation = 'none';
+    void toastEl.offsetWidth;
+    toastEl.style.animation = '';
+    if (toastTimer) window.clearTimeout(toastTimer);
+    toastTimer = window.setTimeout(function () {
+      toastEl.hidden = true;
+      toastMsg.textContent = '';
+    }, 2000);
+  }
 
   function flashCheck(button) {
     var copy = button.querySelector('.vt-glyph-copy');
     var check = button.querySelector('.vt-glyph-check');
-    var status = document.getElementById('vt-copy-status');
-    if (status) status.textContent = 'کپی شد';
+    showToast(button.getAttribute('data-toast') || 'کپی شد');
     if (copy && check) {
       copy.hidden = true;
       check.hidden = false;
@@ -47,7 +64,6 @@
       } else if (button.dataset.originalLabel) {
         button.textContent = button.dataset.originalLabel;
       }
-      if (status) status.textContent = '';
     }, 1800);
   }
 
