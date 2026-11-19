@@ -118,7 +118,6 @@ body {
   perspective: 1200px;
   isolation: isolate;
   -webkit-tap-highlight-color: transparent;
-  cursor: pointer;
 }
 .vt-flip {
   position: relative;
@@ -302,13 +301,6 @@ body {
 }
 .vt-copyrow:hover {
   background: rgb(0 0 0 / 0.35);
-}
-.vt-copyrow.is-copied,
-.vt-copyrow.is-copied:hover {
-  background: linear-gradient(to bottom right, #4ade80, #16a34a);
-}
-.vt-copyrow.is-copied .vt-copyrow-label {
-  color: rgb(255 255 255 / 0.9);
 }
 .vt-copyrow:active {
   transform: scale(0.98);
