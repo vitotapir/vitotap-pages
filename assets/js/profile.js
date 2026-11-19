@@ -2,27 +2,8 @@
 (function () {
   'use strict';
 
-  function toggleSide(card) {
-    card.setAttribute(
-      'data-side',
-      card.getAttribute('data-side') === 'back' ? 'front' : 'back',
-    );
-  }
+  var CHECK = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>';
 
-  document.querySelectorAll('.vt-card').forEach(function (card) {
-    card.addEventListener('click', function (event) {
-      if (event.target.closest('[data-copy]')) return;
-      toggleSide(card);
-    });
-    card.addEventListener('keydown', function (event) {
-      if (event.key !== 'Enter' && event.key !== ' ') return;
-      if (event.target.closest('[data-copy]')) return;
-      event.preventDefault();
-      toggleSide(card);
-    });
-  });
-
-  var checkTimer = null;
   var toastTimer = null;
   var toastEl = document.getElementById('vt-toast');
   var toastMsg = toastEl ? toastEl.querySelector('.vt-toast-msg') : null;
@@ -42,33 +23,6 @@
     }, 2000);
   }
 
-  function flashCheck(button) {
-    var copy = button.querySelector('.vt-glyph-copy');
-    var check = button.querySelector('.vt-glyph-check');
-    showToast(button.getAttribute('data-toast') || 'کپی شد');
-    button.classList.add('is-copied');
-    if (copy && check) {
-      copy.hidden = true;
-      check.hidden = false;
-    } else {
-      // Text-only buttons (e.g. field copy) swap their label instead.
-      if (!button.dataset.originalLabel) {
-        button.dataset.originalLabel = button.textContent || 'کپی';
-      }
-      button.textContent = '✓';
-    }
-    if (checkTimer) window.clearTimeout(checkTimer);
-    checkTimer = window.setTimeout(function () {
-      button.classList.remove('is-copied');
-      if (copy && check) {
-        copy.hidden = false;
-        check.hidden = true;
-      } else if (button.dataset.originalLabel) {
-        button.textContent = button.dataset.originalLabel;
-      }
-    }, 1800);
-  }
-
   function fallbackCopy(value) {
     var area = document.createElement('textarea');
     area.value = value;
@@ -85,25 +39,79 @@
     document.body.removeChild(area);
   }
 
+  function copyValue(value) {
+    var p;
+    try {
+      p =
+        navigator.clipboard && navigator.clipboard.writeText
+          ? navigator.clipboard.writeText(value)
+          : Promise.reject();
+    } catch (err) {
+      p = Promise.reject(err);
+    }
+    return p.catch(function () {
+      fallbackCopy(value);
+    });
+  }
+
+  // Text-only buttons (bank-field rows): swap the label for a tick.
+  function flashField(button) {
+    if (!button.dataset.originalLabel) {
+      button.dataset.originalLabel = button.textContent || 'کپی';
+    }
+    button.textContent = '✓';
+    showToast(button.getAttribute('data-toast') || 'کپی شد');
+    if (button._vtRestore) window.clearTimeout(button._vtRestore);
+    button._vtRestore = window.setTimeout(function () {
+      button.textContent = button.dataset.originalLabel;
+      delete button._vtRestore;
+    }, 1800);
+  }
+
+  // Card / Sheba rows: the whole row swaps into the copied state — height
+  // locked, centred green message with a circled check — for 1800 ms, then
+  // the original markup and styles come back (reference behaviour).
+  function flashRow(row) {
+    var h = row.offsetHeight;
+    var orig = row.innerHTML;
+    var st = row.getAttribute('style');
+    row.style.height = h + 'px';
+    row.style.justifyContent = 'center';
+    row.style.borderColor = 'rgba(52,211,153,.55)';
+    row.style.backgroundColor = 'rgba(6,78,59,.45)';
+    row.innerHTML =
+      '<span style="display:flex;align-items:center;gap:8px;color:#34d399;font-size:12px;font-weight:700;">' +
+      (row.getAttribute('data-toast') || 'کپی شد') +
+      CHECK +
+      '</span>';
+    if (row._vtRestore) window.clearTimeout(row._vtRestore);
+    row._vtRestore = window.setTimeout(function () {
+      row.innerHTML = orig;
+      if (st === null) row.removeAttribute('style');
+      else row.setAttribute('style', st);
+      delete row.dataset.busy;
+      delete row._vtRestore;
+    }, 1800);
+  }
+
   document.addEventListener('click', function (event) {
     var button = event.target.closest('[data-copy]');
     if (!button) return;
     event.stopPropagation();
     var value = button.getAttribute('data-copy') || '';
     if (!value) return;
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard.writeText(value).then(
-        function () {
-          flashCheck(button);
-        },
-        function () {
-          fallbackCopy(value);
-          flashCheck(button);
-        },
-      );
-    } else {
-      fallbackCopy(value);
-      flashCheck(button);
+    var isRow = button.classList.contains('vt-copyrow');
+    if (isRow) {
+      if (button.dataset.busy) return;
+      button.dataset.busy = '1';
     }
+    copyValue(value).then(function () {
+      if (isRow) {
+        flashRow(button);
+        showToast(button.getAttribute('data-toast') || 'کپی شد');
+      } else {
+        flashField(button);
+      }
+    });
   });
 })();
