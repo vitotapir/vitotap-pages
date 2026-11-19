@@ -46,6 +46,7 @@
     var copy = button.querySelector('.vt-glyph-copy');
     var check = button.querySelector('.vt-glyph-check');
     showToast(button.getAttribute('data-toast') || 'کپی شد');
+    button.classList.add('is-copied');
     if (copy && check) {
       copy.hidden = true;
       check.hidden = false;
@@ -58,6 +59,7 @@
     }
     if (checkTimer) window.clearTimeout(checkTimer);
     checkTimer = window.setTimeout(function () {
+      button.classList.remove('is-copied');
       if (copy && check) {
         copy.hidden = false;
         check.hidden = true;
